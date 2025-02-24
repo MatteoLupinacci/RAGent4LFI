@@ -7,25 +7,22 @@ app = Flask(__name__)
 @app.route('/find_path_with_gobuster', methods=['POST'])
 def find_path_with_gobuster():
     target_url = request.json.get('target_url')
-    wordlist = "/usr/share/seclists/Discovery/Web-Content/common.txt"  # Path alla wordlist
+    #wordlist = "/usr/share/seclists/Discovery/Web-Content/common.txt"  # Path alla wordlist
+    wordlist = "/home/matteolupinacci/wordlist.txt"
     command = f"gobuster dir -u {target_url} -w {wordlist}"
-    print(f"Executing: {command}\n")
+    print(f"Executing: {command}")
     
     # Regex per rimuovere caratteri ANSI (es. colori e sequenze di controllo)
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    
     try:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
         valid_paths = []
         
-        # Legge l'output riga per riga in tempo reale
         for line in process.stdout:
             clean_line = ansi_escape.sub('', line).strip()  
             #print(clean_line)
-            
             if "(Status: 200)" in clean_line:
-                valid_paths.append(clean_line.split()[0])  # Prende solo il path
+                valid_paths.append("".join(clean_line.split()[0]))  # Prende solo il path
 
         process.wait()  # Aspetta la fine del processo
         print("\nValid paths found:", valid_paths)
@@ -39,25 +36,29 @@ def find_path_with_gobuster():
 def find_query_params_with_wfuzz():
     target_url = request.json.get('target_url')
     payload = request.json.get('payload')
-    wordlist = "/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt"  # Path alla wordlist
-    command = f"wfuzz -w {wordlist} --hc 404 --hw 0 {target_url}?FUZZ={payload}"
+    #wordlist = "/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt"
+    wordlist = "/home/matteolupinacci/wordlist.txt"
+    command = f"wfuzz -w {wordlist} --hc 404 --sc 200 {target_url}?FUZZ={payload}"
     print(f"Executing: {command}\n")
     
     # Regex per rimuovere caratteri ANSI (es. colori e sequenze di controllo)
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    
     try:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
         valid_params = []
         
-        # Legge l'output riga per riga in tempo reale
         for line in process.stdout:
             clean_line = ansi_escape.sub('', line).strip()  
             #print(clean_line)
-            
-            if "(Status: 200)" in clean_line:
-                valid_params.append(clean_line.split()[0])  # Prende solo il path
+            if "200" in clean_line:
+                match = re.match(r'\d+:\s+200\s+(\d+)\s+L\s+(\d+)\s+W\s+(\d+)\s+Ch\s+"([^"]+)"', clean_line)
+                if match:
+                    length = int(match.group(1))
+                    word_count = int(match.group(2))
+                    char_count = int(match.group(3))
+                    payload = match.group(4)
+                    if length > 0 or word_count > 0 or char_count > 0:
+                        valid_params.append(payload)
 
         process.wait()  # Aspetta la fine del processo
         print("\nValid query params found:", valid_params)
@@ -65,7 +66,6 @@ def find_query_params_with_wfuzz():
     
     except subprocess.TimeoutExpired:
         return RuntimeError({"error": "Timeout during paths fuzzing.", "status": "failure"})
-    
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
