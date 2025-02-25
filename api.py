@@ -66,6 +66,26 @@ def find_query_params_with_wfuzz():
     
     except subprocess.TimeoutExpired:
         return RuntimeError({"error": "Timeout during paths fuzzing.", "status": "failure"})
-    
+
+
+@app.route('/execute_command', methods=['POST'])
+def execute_command():
+    command = request.json.get('command')
+    print(f"Executing: {command}")
+
+    # Regex per rimuovere caratteri ANSI (es. colori e sequenze di controllo)
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.stdout:
+            clean_line = ansi_escape.sub('', result.stdout).strip()  
+            print("\nCommand output:", clean_line)
+            return jsonify({"output": clean_line, "status": "success"})
+        clean_line = ansi_escape.sub('', result.stderr).strip()  
+        print("\nCommand output:", clean_line)
+        return jsonify({"output": clean_line, "status": "error"})
+    except Exception as e:
+        return f"Errore durante l'esecuzione del comando: {str(e)}"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
