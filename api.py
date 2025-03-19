@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify # type: ignore
 import subprocess
 import re
 
@@ -7,8 +7,8 @@ app = Flask(__name__)
 @app.route('/find_path_with_gobuster', methods=['POST'])
 def find_path_with_gobuster():
     target_url = request.json.get('target_url')
-    #wordlist = "/usr/share/seclists/Discovery/Web-Content/common.txt"  # Path alla wordlist
-    wordlist = "/home/matteolupinacci/wordlist.txt"
+    wordlist = "/usr/share/seclists/Discovery/Web-Content/common.txt"  # Path alla wordlist
+    #wordlist = "/home/matteolupinacci/wordlist.txt"
     command = f"gobuster dir -u {target_url} -w {wordlist}"
     print(f"Executing: {command}")
     
@@ -36,8 +36,8 @@ def find_path_with_gobuster():
 def find_query_params_with_wfuzz():
     target_url = request.json.get('target_url')
     payload = request.json.get('payload')
-    #wordlist = "/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt"
-    wordlist = "/home/matteolupinacci/wordlist.txt"
+    wordlist = "/usr/share/seclists/Discovery/Web-Content/burp-parameter-names.txt"
+    #wordlist = "/home/matteolupinacci/wordlist.txt"
     command = f"wfuzz -w {wordlist} --hc 404 --sc 200 {target_url}?FUZZ={payload}"
     print(f"Executing: {command}\n")
     
@@ -85,7 +85,42 @@ def execute_command():
         print("\nCommand output:", clean_line)
         return jsonify({"output": clean_line, "status": "error"})
     except Exception as e:
-        return f"Errore durante l'esecuzione del comando: {str(e)}"
+        return f"Error during command execution: {str(e)}"
+
+
+@app.route('/verify_cyris_description_file_syntax', methods=['POST'])
+def verify_cyris_description_file_syntax():
+    content_file = request.json.get('file')
+    print(content_file)
+    #extract only yaml code from agent output
+    #match = re.search(r"```yaml\n(.*?)\n```", content_file, re.DOTALL)
+    #yaml = match.group(1) if match else None
+    if not content_file:
+        print("No YAML code found.")
+        return jsonify({"output": "No YAML code found.", "status": "error"})
+    
+    with open("/home/matteolupinacci/Desktop/cyris/agent_output/test.yml", "w") as file:
+        file.write(content_file)
+    command = "python3 /home/matteolupinacci/Desktop/cyris/main/agent_output_checker.py -file /home/matteolupinacci/Desktop/cyris/agent_output/test.yml -dir /home/matteolupinacci/Desktop/cyris/cyber_range/"
+    
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.stdout:
+            clean_line = ansi_escape.sub('', result.stdout).strip()  
+            print("\nCommand output:", clean_line)
+            if "CORRECT" in clean_line:
+                print(f"YAML saved in a file")
+            else:
+                command2 = "rm /home/matteolupinacci/Desktop/cyris/agent_output/test.yml"
+                subprocess.run(command2, shell=True, capture_output=True, text=True)
+            return jsonify({"output": clean_line, "status": "success"})
+
+        clean_line = ansi_escape.sub('', result.stderr).strip()  
+        print("\nCommand output:", clean_line)
+        return jsonify({"output": clean_line, "status": "error"})
+    except Exception as e:
+        return f"Error during command execution: {str(e)}"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
