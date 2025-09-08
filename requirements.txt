@@ -1,4 +1,5 @@
 flask
+requests
 langchain
 langgraph
 langchain-huggingface
