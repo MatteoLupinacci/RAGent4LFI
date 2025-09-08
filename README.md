@@ -21,7 +21,7 @@ To get started with RAGent4LFI, clone the repository and set up your environment
 
 1.  **Clone the Repository**:
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/MatteoLupinacci/RAGent4LFI.git
     cd RAGent4LFI
     ```
 
