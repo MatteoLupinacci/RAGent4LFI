@@ -1,6 +1,15 @@
-🛡️ RAGent4LFI: AI-Powered Local File Inclusion Vulnerability Agent
+## 🛡️ RAGent4LFI: AI-Powered Local File Inclusion Vulnerability Agent
 
 Dive into the future of cybersecurity with **RAGent4LFI**! This project leverages the power of Retrieval Augmented Generation (RAG) and LLM agent to automate the detection of Local File Inclusion (LFI) vulnerabilities. 🚀 By integrating with powerful scanning tools like Gobuster and Wfuzz, and fortified with OWASP knowledge, RAGent4LFI provides robust, context-aware security assessments. Deploy our lightweight Flask API on your Kali Linux environment to orchestrate sophisticated vulnerability scans, making web security smarter and more efficient. ✨
+
+## Disclaimer ⚠️
+
+This project is intended solely for academic, educational, and research purposes in the field of cybersecurity. It is designed for use in:
+*	🧑‍🎓 Learning and training (e.g., university courses, security research, labs)
+*	🎯 Controlled environments such as CTFs and legal penetration testing platforms
+*	🔍 Forensic analysis or security testing only on devices you own or are explicitly authorized to test
+
+The author assumes no responsibility for improper or unlawful use of the software. ❌ Any misuse of this tool for illegal activities, unauthorized access, or violation of privacy is strictly prohibited. Use this tool responsibly and ethically. 🔒
 
 ## Getting Started
 
